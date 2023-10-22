@@ -2,7 +2,10 @@ package com.aninfo.service;
 
 import com.aninfo.exceptions.DepositNegativeSumException;
 import com.aninfo.exceptions.InsufficientFundsException;
+import com.aninfo.exceptions.NonExistentTransactionException;
 import com.aninfo.model.Account;
+import com.aninfo.model.Transaction;
+import com.aninfo.model.TransactionType;
 import com.aninfo.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,13 @@ public class AccountService {
     @Autowired
     private AccountRepository accountRepository;
 
-    public Account createAccount(Account account) {
-        return accountRepository.save(account);
+    @Autowired
+    private TransactionService transactionService;
+
+    public Account createAccount(Double balance) {
+        Account account = new Account(balance);
+        save(account);
+        return createDeposit(account,balance);
     }
 
     public Collection<Account> getAccounts() {
@@ -44,9 +52,10 @@ public class AccountService {
         if (account.getBalance() < sum) {
             throw new InsufficientFundsException("Insufficient funds");
         }
-
-        account.setBalance(account.getBalance() - sum);
-        accountRepository.save(account);
+        Transaction transaction = account.withdraw(sum);
+        transaction = transactionService.createTransaction(transaction);
+        account.addTransaction(transaction);
+        save(account);
 
         return account;
     }
@@ -57,12 +66,58 @@ public class AccountService {
         if (sum <= 0) {
             throw new DepositNegativeSumException("Cannot deposit negative sums");
         }
+        return createDeposit(accountRepository.findAccountByCbu(cbu),sum);
+    }
 
-        Account account = accountRepository.findAccountByCbu(cbu);
-        account.setBalance(account.getBalance() + sum);
-        accountRepository.save(account);
+    private Account createDeposit(Account account, Double sum)
+    {
+
+        Transaction transaction = account.deposit(applyPromo(sum));
+        transaction = transactionService.createTransaction(transaction);
+        account.addTransaction(transaction);
+        save(account);
 
         return account;
     }
 
+
+    public Collection<Transaction> getTransactions() {
+        return transactionService.getTransactions();
+    }
+
+    public Collection<Transaction> getTransactionsByAccount(Long cbu) {
+        Account account = accountRepository.findAccountByCbu(cbu);
+        return transactionService.getTransactionsByCbu(account.getTransactions());
+    }
+
+    public void deleteTransaction(Long id) {
+        Optional<Transaction> transaction = transactionService.findById(id);
+        if (transaction.isEmpty())
+        {
+            throw new NonExistentTransactionException("Transaction not found");
+        }
+        Account account = accountRepository.findAccountByCbu(transaction.get().getAccCbu());
+        account = account.deleteTransaction(transaction.get());
+        transactionService.deleteById(id);
+        save(account);
+    }
+
+    public Optional<Transaction> getTransaction(Long id) {
+        return transactionService.findById(id);
+    }
+
+    private Double applyPromo(Double sum) {
+        if( sum >= 2000)
+        {
+            if (sum*0.1 <= 500)
+            {
+                sum += sum*0.1;
+            }
+            else
+            {
+                sum +=500;
+            }
+        }
+        return sum;
+    }
 }

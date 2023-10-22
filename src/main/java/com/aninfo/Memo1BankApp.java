@@ -1,6 +1,7 @@
 package com.aninfo;
 
 import com.aninfo.model.Account;
+import com.aninfo.model.Transaction;
 import com.aninfo.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -33,8 +34,8 @@ public class Memo1BankApp {
 
 	@PostMapping("/accounts")
 	@ResponseStatus(HttpStatus.CREATED)
-	public Account createAccount(@RequestBody Account account) {
-		return accountService.createAccount(account);
+	public Account createAccount(@RequestParam Double balance ) {
+		return accountService.createAccount(balance);
 	}
 
 	@GetMapping("/accounts")
@@ -65,16 +66,35 @@ public class Memo1BankApp {
 		accountService.deleteById(cbu);
 	}
 
-	@PutMapping("/accounts/{cbu}/withdraw")
+	@PostMapping("/accounts/{cbu}/withdraw")
 	public Account withdraw(@PathVariable Long cbu, @RequestParam Double sum) {
 		return accountService.withdraw(cbu, sum);
 	}
 
-	@PutMapping("/accounts/{cbu}/deposit")
+	@PostMapping("/accounts/{cbu}/deposit")
 	public Account deposit(@PathVariable Long cbu, @RequestParam Double sum) {
 		return accountService.deposit(cbu, sum);
 	}
 
+
+	@GetMapping("/transactions")
+	public Collection<Transaction> getTransactions() {
+		return accountService.getTransactions();
+	}
+
+	@GetMapping("/transactions/{id}")
+	public ResponseEntity<Transaction> getTransaction(Long id) {
+		Optional<Transaction> transactionOptional = accountService.getTransaction(id);
+		return ResponseEntity.of(transactionOptional);
+	}
+	@GetMapping("/accounts/{cbu}/transactions")
+	public Collection<Transaction> getTransactionsbyAccount(@PathVariable Long cbu) {
+		return accountService.getTransactionsByAccount(cbu);
+	}
+	@DeleteMapping("/accounts/{cbu}/transactions/{id}")
+	public void deleteTransaction(@PathVariable Long id) {
+		accountService.deleteTransaction(id);
+	}
 	@Bean
 	public Docket apiDocket() {
 		return new Docket(DocumentationType.SWAGGER_2)
