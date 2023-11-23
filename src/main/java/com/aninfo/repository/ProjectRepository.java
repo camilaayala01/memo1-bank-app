@@ -6,9 +6,9 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 @RepositoryRestResource
-public interface AccountRepository extends CrudRepository<Account, Long> {
+public interface ProjectRepository extends CrudRepository<Project, Long> {
 
-    Account findAccountByCbu(Long cbu);
+    Optional<Project> findProjectByName(String name);
 
     @Override
     List<Account> findAll();

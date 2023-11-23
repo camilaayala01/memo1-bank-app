@@ -4,9 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-public class NonExistentTransactionException extends RuntimeException {
-
-    public NonExistentTransactionException(String message) {
+public class ProjectNameAlreadyTakenException extends RuntimeException{
+    public ProjectNameAlreadyTakenException(String message) {
         super(message);
     }
 }
